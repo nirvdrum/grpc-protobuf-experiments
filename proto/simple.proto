@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package proto.leak;
+
+message Recursive {
+    repeated Recursive data = 1;
+}
