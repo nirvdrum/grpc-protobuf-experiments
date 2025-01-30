@@ -38,7 +38,7 @@ rule "gen/protoboeuf" => ->(_) { FileList["#{PROTO_PATH}/*.proto"] } do
   proto_files.each do |proto_file|
     binary_file = "gen/protoboeuf/#{proto_file.sub(".proto", ".bproto")}"
     sh "protoc -I #{PROTO_PATH} -I . #{proto_file} --descriptor_set_out #{binary_file}"
-    sh "bundle exec protoboeuf --bin #{binary_file} > gen/protoboeuf/#{proto_file.sub(".proto", ".rb")}"
+    sh "bundle exec protoboeuf #{binary_file} > gen/protoboeuf/#{proto_file.sub(".proto", ".rb")}"
   end
 
   sh "touch gen" # HACK: force rake to treat gen as up to date
