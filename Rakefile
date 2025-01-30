@@ -80,5 +80,8 @@ UNBUNDLER_ENV = {
 
 desc("Run benchmarks")
 task bench: :default do
-  # ...
+  benchmark(:lifecycle) do |cmd|
+    # Number of reports to run.
+    3.times { cmd.call }
+  end
 end
