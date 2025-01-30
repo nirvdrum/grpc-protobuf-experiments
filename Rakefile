@@ -82,4 +82,28 @@ task bench: :default do
     # Number of reports to run.
     3.times { cmd.call }
   end
+
+  benchmark(:bigtable_version) do |cmd|
+    %w[
+      2.11.0
+      2.11.1
+    ].each do |v|
+      # Ensure the desired version is installed.
+      gem_name = "google-cloud-bigtable"
+      if !system(UNBUNDLER_ENV, "gem", "info", "--silent", "--installed", gem_name, "-v", v)
+        system(UNBUNDLER_ENV, "gem", "install", gem_name, "-v", v)
+      end
+
+      %w[
+        long-lived
+        short-lived
+        deep_copy
+      ].each do |test|
+        cmd.call({
+          "BIGTABLE_VERSION" => v,
+          "BIGTABLE_TEST" => test,
+        }.merge(UNBUNDLER_ENV))
+      end
+    end
+  end
 end
