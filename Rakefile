@@ -45,3 +45,65 @@ rule "gen/protoboeuf" => ->(_) { FileList["#{PROTO_PATH}/*.proto"] } do
 end
 
 task default: [:generate, :generate_protoboeuf]
+
+$benchmarks_run = 0
+def benchmark(name)
+  return if ENV["BENCH"] && !ENV["BENCH"].split(",").include?(name.to_s)
+
+  puts "\n\n" if ($benchmarks_run += 1) > 1
+  puts "### #{name} benchmark ###"
+
+  hold = Tempfile.create.tap(&:close).path
+
+  cmd = ->(env = {}) do
+    system({"BENCH_HOLD" => hold}.merge(env), RbConfig.ruby, "bench/#{name}.rb")
+  end
+
+  if block_given?
+    yield(cmd)
+  else
+    cmd.call
+  end
+ensure
+  # benchmark-ips might automatically remove this.
+  File.unlink(hold) if hold && File.exist?(hold)
+end
+
+UNBUNDLER_ENV = {
+  # Discard bundler effects on subprocesses
+  # as this benchmark has its own gemfile.
+  "BUNDLER_SETUP" => nil,
+  "RUBYOPT" => nil,
+}
+
+desc("Run benchmarks")
+task bench: :default do
+  benchmark(:lifecycle) do |cmd|
+    # Number of reports to run.
+    3.times { cmd.call }
+  end
+
+  benchmark(:bigtable_version) do |cmd|
+    %w[
+      2.11.0
+      2.11.1
+    ].each do |v|
+      # Ensure the desired version is installed.
+      gem_name = "google-cloud-bigtable"
+      if !system(UNBUNDLER_ENV, "gem", "info", "--silent", "--installed", gem_name, "-v", v)
+        system(UNBUNDLER_ENV, "gem", "install", gem_name, "-v", v)
+      end
+
+      %w[
+        long-lived
+        short-lived
+        deep_copy
+      ].each do |test|
+        cmd.call({
+          "BIGTABLE_VERSION" => v,
+          "BIGTABLE_TEST" => test,
+        }.merge(UNBUNDLER_ENV))
+      end
+    end
+  end
+end

@@ -1,8 +1,6 @@
 # typed: false
 # frozen_string_literal: true
 
-require "objspace"
-
 clone_graph = !!ENV['CLONE_GRAPH']
 
 if ENV["USE_PROTOBOUEF"]
@@ -15,20 +13,14 @@ end
 require_relative "lib/memsize_helpers"
 
 filter = Proto::Leak::RowFilter.new
-memsize_rss_start = MemsizeHelpers.memsize_rss_in_kb
-memsize_rss_current = memsize_rss_start
+MemsizeHelpers.reset!
 
 10.times do
   100_000.times do
     Proto::Leak::RowFilter::Chain.new(filters: [clone_graph ? Google::Protobuf.deep_copy(filter) : filter])
   end
 
-  GC.start
-  memsize_rss_current = MemsizeHelpers.memsize_rss_in_kb
-
-  if ENV["VERBOSE"]
-    puts "Memory usage: #{memsize_rss_current} KB - ruby space #{(ObjectSpace.memsize_of_all / 1000).round(0)} KB"
-  end
+  MemsizeHelpers.check_usage
 end
 
-puts "Total memory growth: #{memsize_rss_current - memsize_rss_start} KB"
+MemsizeHelpers.report_usage
