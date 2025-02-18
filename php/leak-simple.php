@@ -2,8 +2,6 @@
 
 set_include_path(get_include_path() . PATH_SEPARATOR . dirname(__FILE__) . '/gen');
 
-require_once 'vendor/autoload.php';
-
 require_once 'GPBMetadata/Simple.php'; // Update to actual path
 require_once 'Proto/Leak/Recursive.php'; // Update to actual path
 
@@ -32,6 +30,7 @@ $data = [];
 for ($i = 0; $i < 10; $i++) {
     for ($j = 0; $j < 1000000; $j++) {
         $obj = new Proto\Leak\Recursive(['data' => [$datum]]);
+        /* $obj->setData([ $datum ]); */
     }
 
     // Trigger garbage collection
