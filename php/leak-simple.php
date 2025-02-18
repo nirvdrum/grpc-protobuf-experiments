@@ -14,7 +14,7 @@ function memsize_rss_bytes() {
   // Not sure what values are possible in this env.
   if (preg_match("/^\d+m$/", $rss)) {
     $int *= 1_000_000;
-  } elseif (preg_match("/^\d+k$/", $rss)) {
+  } elseif (preg_match("/^\d+k?$/", $rss)) {
     $int *= 1_000;
   } else {
     print("WARNING, unknown unit: " . $rss. "\n");
